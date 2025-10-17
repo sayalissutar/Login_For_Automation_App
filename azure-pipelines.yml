@@ -4,16 +4,67 @@
 # https://aka.ms/yaml
 
 trigger:
-- main
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - README.md
+      - '*.md'
 
-pool:
-  vmImage: ubuntu-latest
+pr: none  # Disable PR triggers
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+variables:
+  - group: 'CI-Secrets'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+stages:
+- stage: BuildAndScan
+  displayName: 'Trigger Jenkins Build + Sonar Scan'
+  jobs:
+  - job: ReactAppBuild
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: JenkinsQueueJob@2
+      inputs:
+        serverEndpoint: 'Service1'
+        jobName: 'ReactApp-Build'
+        captureConsole: true
+        pollInterval: '10'
+        jobTimeout: '60'
+
+- stage: MergeToQA
+  dependsOn: BuildAndScan
+  condition: succeeded()
+  displayName: 'Merge main → QA branch'
+  jobs:
+  - job: Merge
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+      persistCredentials: true
+    - script: |
+        git config user.name "sayali.sutar"
+        git config user.email "sayali.sutar@whizible.net"
+        git fetch origin
+        git checkout QA || git checkout -b QA
+        git merge origin/main -m "Auto-merge main → QA"
+        git push https://$(GITHUB_PAT)@github.com/sayalissutar/Login_For_Automation_App.git QA
+      env:
+        GITHUB_PAT: $(GITHUB_PAT)
+      displayName: "Merge to QA branch"
+
+- stage: DeployToQA
+  dependsOn: MergeToQA
+  condition: succeeded()
+  displayName: 'Deploy to QA Server'
+  jobs:
+  - job: Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        echo "Deploying React build to QA..."
+        ssh user@qa-server "cd /var/www/reactapp && git pull origin QA && npm install && npm run build && pm2 restart all"
+      displayName: 'Deploy React App to QA'
