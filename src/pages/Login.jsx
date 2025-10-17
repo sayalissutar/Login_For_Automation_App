@@ -72,7 +72,7 @@ function Login() {
               <path d="M24 20L32 28L24 36L16 28L24 20Z" fill="white" fillOpacity="0.6"/>
             </svg>
           </div>
-          <h1>CI New Final </h1>
+          <h1>CI New Final1 </h1>
           <p>Sign in to your account</p>
         </div>
 
