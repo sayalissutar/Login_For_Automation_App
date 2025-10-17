@@ -15,7 +15,7 @@ stages:
 - stage: BuildAndScan
   displayName: 'Trigger Jenkins Build + Sonar Scan'
   jobs:
-  - job: JenkinsBuild
+  - job: ReactAppBuild
     pool:
       vmImage: 'ubuntu-latest'
     steps:
