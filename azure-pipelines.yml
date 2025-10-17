@@ -38,8 +38,8 @@ stages:
     steps:
     - checkout: self
     - script: |
-        git config user.name "Azure DevOps"
-        git config user.email "devops@company.com"
+        git config user.name "sayali.sutar"
+        git config user.email "sayali.sutar@whizible.net"
         git fetch origin
         git checkout QA || git checkout -b QA
         git merge origin/main -m "Auto-merge main → QA"
