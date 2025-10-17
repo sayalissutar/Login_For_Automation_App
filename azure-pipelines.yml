@@ -4,16 +4,60 @@
 # https://aka.ms/yaml
 
 trigger:
-- main
+  branches:
+    include:
+      - main
 
-pool:
-  vmImage: ubuntu-latest
+variables:
+  - group: 'CI-Secrets'
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+stages:
+- stage: BuildAndScan
+  displayName: 'Trigger Jenkins Build + Sonar Scan'
+  jobs:
+  - job: JenkinsBuild
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: JenkinsQueueJob@2
+      inputs:
+        serverEndpoint: 'jenkins-service-connection'
+        jobName: 'ReactApp-Build'
+        captureConsole: true
+        pollInterval: '10'
+        jobTimeout: '60'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- stage: MergeToQA
+  dependsOn: BuildAndScan
+  condition: succeeded()
+  displayName: 'Merge main → QA branch'
+  jobs:
+  - job: Merge
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+    - script: |
+        git config user.name "Azure DevOps"
+        git config user.email "devops@company.com"
+        git fetch origin
+        git checkout QA || git checkout -b QA
+        git merge origin/main -m "Auto-merge main → QA"
+        git push https://$(GITHUB_PAT)@github.com/<your-username>/<repo>.git QA
+      env:
+        GITHUB_PAT: $(GITHUB_PAT)
+      displayName: "Merge to QA branch"
+
+- stage: DeployToQA
+  dependsOn: MergeToQA
+  condition: succeeded()
+  displayName: 'Deploy to QA Server'
+  jobs:
+  - job: Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        echo "Deploying React build to QA..."
+        ssh user@qa-server "cd /var/www/reactapp && git pull origin QA && npm install && npm run build && pm2 restart all"
+      displayName: 'Deploy React App to QA'
