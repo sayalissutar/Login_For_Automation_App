@@ -21,7 +21,7 @@ stages:
     steps:
     - task: JenkinsQueueJob@2
       inputs:
-        serverEndpoint: 'jenkins-service-connection'
+        serverEndpoint: 'Service1'
         jobName: 'ReactApp-Build'
         captureConsole: true
         pollInterval: '10'
