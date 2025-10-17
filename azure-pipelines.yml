@@ -7,6 +7,12 @@ trigger:
   branches:
     include:
       - main
+  paths:
+    exclude:
+      - README.md
+      - '*.md'
+
+pr: none  # Disable PR triggers
 
 variables:
   - group: 'CI-Secrets'
@@ -37,13 +43,14 @@ stages:
       vmImage: 'ubuntu-latest'
     steps:
     - checkout: self
+      persistCredentials: true
     - script: |
         git config user.name "sayali.sutar"
         git config user.email "sayali.sutar@whizible.net"
         git fetch origin
         git checkout QA || git checkout -b QA
         git merge origin/main -m "Auto-merge main → QA"
-        git push https://$(GITHUB_PAT)@github.com/https://github.com/sayalissutar/Login_For_Automation_App.git QA
+        git push https://$(GITHUB_PAT)@github.com/sayalissutar/Login_For_Automation_App.git QA
       env:
         GITHUB_PAT: $(GITHUB_PAT)
       displayName: "Merge to QA branch"
