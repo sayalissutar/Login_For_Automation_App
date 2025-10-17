@@ -43,7 +43,7 @@ stages:
         git fetch origin
         git checkout QA || git checkout -b QA
         git merge origin/main -m "Auto-merge main → QA"
-        git push https://$(GITHUB_PAT)@github.com/<your-username>/<repo>.git QA
+        git push https://$(GITHUB_PAT)@github.com/https://github.com/sayalissutar/Login_For_Automation_App.git QA
       env:
         GITHUB_PAT: $(GITHUB_PAT)
       displayName: "Merge to QA branch"
